@@ -1,10 +1,12 @@
 [package]
 name = "menu_genie"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Dusan Djordjic"]
+license = "MIT"
 repository = "https://github.com/DusanDjordjic/MenuGenie"
 description = "Multi-level terminal menu library."
+documentation =  "https://docs.rs/menu_genie"
 keywords = ["terminal", "menu"]
 
 [lib]
