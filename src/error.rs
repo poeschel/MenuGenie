@@ -2,42 +2,75 @@ use std::error::Error;
 use std::fmt::Display;
 
 #[derive(Debug)]
-pub enum MgError {
+pub struct MgError {
+    kind: MgErrorKind,
+    description: String,
+}
+
+impl MgError {
+    pub fn kind(&self) -> MgErrorKind {
+        self.kind
+    }
+
+    pub fn empty_call_stack() -> Self {
+        Self {
+            kind: MgErrorKind::EmptyCallStack,
+            description: String::from("Callstack is empty"),
+        }
+    }
+
+    pub fn missing_menu(id: usize) -> Self {
+        Self {
+            kind: MgErrorKind::MissingMenu(id),
+            description: format!("Missing menu with id {id}"),
+        }
+    }
+
+    pub fn missing_menu_item(menu_id: usize, item_id: usize) -> Self {
+        Self {
+            kind: MgErrorKind::MissingMenuItem(menu_id, item_id),
+            description: format!("Missing menu item with id {item_id} in menu with id {menu_id}"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum MgErrorKind {
     EmptyCallStack,
     MissingMenu(usize),
     MissingMenuItem(usize, usize),
-    ParseInputError(std::num::ParseIntError),
-    IoError(std::io::Error),
+    ParseInputError,
+    IoError,
 }
 
 impl From<std::io::Error> for MgError {
     fn from(err: std::io::Error) -> MgError {
-        MgError::IoError(err)
+        MgError {
+            kind: MgErrorKind::IoError,
+            description: err.to_string(),
+        }
     }
 }
 
 impl From<std::num::ParseIntError> for MgError {
     fn from(err: std::num::ParseIntError) -> MgError {
-        MgError::ParseInputError(err)
+        MgError {
+            kind: MgErrorKind::ParseInputError,
+            description: err.to_string(),
+        }
     }
 }
 
 impl Display for MgError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.description())
+        write!(f, "{}", self.description)
     }
 }
 
 impl Error for MgError {
     fn description(&self) -> &str {
         match self {
-            MgError::ParseInputError(e) => e.description(),
-            MgError::EmptyCallStack => "Menu callstack is empty",
-            MgError::MissingMenu(id) => &format!("Missing menu with id {id}"),
-            MgError::MissingMenuItem(menu_id, item_id) => {
-                &format!("Missing menu item with id {item_id} in menu {menu_id}")
-            }
-            MgError::IoError(e) => e.description(),
+            _ => &self.description,
         }
     }
 }

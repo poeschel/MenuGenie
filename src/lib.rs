@@ -8,7 +8,7 @@ mod menu_item;
 
 pub use action::MenuAction;
 pub use builder::MenuBuilder;
-pub use error::MgError;
+pub use error::{MgError, MgErrorKind};
 
 use menu::Menu;
 
@@ -23,13 +23,13 @@ impl<'a> MenuGenie<'a> {
         self.menus
             .iter()
             .find(|&menu| menu.id == menu_id)
-            .ok_or(MgError::MissingMenu(menu_id))
+            .ok_or(MgError::missing_menu(menu_id))
     }
 
     fn get_current_menu(&self) -> Result<&Menu, MgError> {
         match self.callstack.last() {
             Some(&menu_id) => self.get_menu(menu_id),
-            None => Err(MgError::EmptyCallStack),
+            None => Err(MgError::empty_call_stack()),
         }
     }
 
@@ -52,15 +52,16 @@ impl<'a> MenuGenie<'a> {
                     current_menu.prompt();
                     std::io::stdout().flush().unwrap();
                 }
-                Err(e) => match e {
-                    MgError::EmptyCallStack => {
+                Err(e) => match e.kind() {
+                    MgErrorKind::EmptyCallStack => {
                         // If the callstack is empty we should quit the menu
                         return Ok(None);
                     }
-                    e => return Err(e),
+                    _ => return Err(e),
                 },
             }
 
+            input.clear();
             std::io::stdin().read_line(&mut input)?;
 
             match input.trim().parse() {
@@ -101,7 +102,7 @@ impl<'a> MenuGenie<'a> {
                 _ => Ok(Some((current_menu.id, choosen_key))),
             },
 
-            None => Err(MgError::MissingMenuItem(current_menu.id, choosen_key)),
+            None => Err(MgError::missing_menu_item(current_menu.id, choosen_key)),
         }
     }
 
