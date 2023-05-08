@@ -1,31 +1,80 @@
 use std::fmt::Display;
 use std::io::Write;
 
-pub struct MenuGenie {
-    menus: Vec<Menu>,
+pub struct MenuBuilder<'a> {
+    menus: Vec<Menu<'a>>,
+    starting_menu_id: Option<usize>,
+}
+
+impl<'a> MenuBuilder<'a> {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_menu(mut self, key: usize) -> Self {
+        assert!(
+            self.menus.iter().find(|menu| menu.id == key).is_none(),
+            "Menu with key {key} already added"
+        );
+
+        self.menus.push(Menu::new(key));
+        if let None = self.starting_menu_id {
+            self.starting_menu_id = Some(self.menus.len())
+        }
+        self
+    }
+
+    pub fn with_menu_item(mut self, prompt: &'a str, action: MenuAction) -> Self {
+        let last_added_menu = self.menus.last_mut().expect("Menu must be added first");
+        last_added_menu.menu_items.push(MenuItem {
+            prompt,
+            action,
+            key: last_added_menu.menu_items.len() + 1,
+        });
+        self
+    }
+
+    pub fn with_back_button(mut self) -> Self {
+        let last_added_menu = self.menus.last_mut().expect("Menu must be added first");
+        last_added_menu.menu_items.push(MenuItem {
+            prompt: "Back",
+            action: MenuAction::Back,
+            key: 0,
+        });
+        self
+    }
+
+    pub fn starting_menu(mut self, starting_menu_id: usize) -> Self {
+        self.starting_menu_id = Some(starting_menu_id);
+        self
+    }
+
+    pub fn build(self) -> MenuGenie<'a> {
+        assert_ne!(self.menus.len(), 0, "No menus added.");
+        MenuGenie {
+            menus: self.menus,
+            // UNWRAP its safe to unwrap here bacause if no menu is added we have assert
+            // and if there are menus added starting_menu_id will be Some
+            callstack: vec![self.starting_menu_id.unwrap()],
+        }
+    }
+}
+
+impl<'a> Default for MenuBuilder<'a> {
+    fn default() -> Self {
+        MenuBuilder {
+            menus: Vec::new(),
+            starting_menu_id: None,
+        }
+    }
+}
+
+pub struct MenuGenie<'a> {
+    menus: Vec<Menu<'a>>,
     callstack: Vec<usize>,
 }
-impl MenuGenie {
-    pub fn new(menus: Vec<Menu>, starting_menu_id: usize) -> Result<Self, MgError> {
-        let s = Self {
-            menus,
-            callstack: vec![starting_menu_id],
-        };
 
-        if !s.does_menu_exist(starting_menu_id) {
-            Err(MgError {})
-        } else {
-            Ok(s)
-        }
-    }
-
-    fn does_menu_exist(&self, menu_id: usize) -> bool {
-        match self.menus.iter().find(|&menu| menu.id == menu_id) {
-            Some(_) => true,
-            None => false,
-        }
-    }
-
+impl<'a> MenuGenie<'a> {
     fn get_menu(&self, menu_id: usize) -> &Menu {
         self.menus.iter().find(|&menu| menu.id == menu_id).unwrap()
     }
@@ -41,7 +90,7 @@ impl MenuGenie {
         self.get_menu(*self.callstack.last().unwrap())
     }
 
-    pub fn prompt(&mut self) {
+    pub fn prompt(&mut self) -> Option<(usize, usize)> {
         loop {
             // If callstack is empty we should quit the menu
             match self.get_current_menu() {
@@ -50,7 +99,7 @@ impl MenuGenie {
                     print!("> ");
                     std::io::stdout().flush().unwrap();
                 }
-                None => return,
+                None => return None,
             }
 
             let mut input = String::new();
@@ -60,7 +109,10 @@ impl MenuGenie {
             };
 
             match input.trim().parse() {
-                Ok(value) => self.execute_callback(value),
+                Ok(value) => match self.execute_callback(value) {
+                    Some(tuple) => return Some(tuple),
+                    None => continue,
+                },
                 Err(_) => {
                     println!("Invalid input.");
                     continue;
@@ -69,26 +121,46 @@ impl MenuGenie {
         }
     }
 
-    fn execute_callback(&mut self, choosen_key: usize) {
-        match self.get_current_menu_unchecked().get_menu_item(choosen_key) {
-            Some(menu_item) => match (menu_item.cb)() {
-                MenuAction::Back => self.back(),
-                MenuAction::Quit => self.quit(),
-                MenuAction::Navigate(id) => self.navigate(id),
-                _ => (),
+    fn execute_callback(&mut self, choosen_key: usize) -> Option<(usize, usize)> {
+        let current_menu = self.get_current_menu_unchecked();
+        match current_menu.get_menu_item(choosen_key) {
+            Some(menu_item) => match menu_item.action {
+                MenuAction::Back => {
+                    self.back();
+                    None
+                }
+                MenuAction::Quit => {
+                    self.quit();
+                    None
+                }
+                MenuAction::BackToStart => {
+                    self.back_to_start();
+                    None
+                }
+                MenuAction::Navigate(id) => {
+                    self.navigate(id);
+                    None
+                }
+                _ => Some((current_menu.id, choosen_key)),
             },
             None => {
                 println!("Invalid input.");
-                ();
+                None
             }
-        };
+        }
     }
 
     fn back(&mut self) {
-        // There should never be the case where callstack is empty
+        // UNWRAP There should never be the case where callstack is empty
         // In worse case there is only one item
         // and in next iteration of the loop menu would close
         self.callstack.pop().unwrap();
+    }
+
+    fn back_to_start(&mut self) {
+        // UNWRAP Same as in fn back
+        let first = *self.callstack.first().unwrap();
+        self.callstack.retain(|ele| *ele == first)
     }
 
     fn quit(&mut self) {
@@ -100,22 +172,16 @@ impl MenuGenie {
     }
 }
 
-pub struct Menu {
+pub struct Menu<'a> {
     id: usize,
-    menu_items: Vec<MenuItem>,
+    menu_items: Vec<MenuItem<'a>>,
 }
 
-impl Menu {
+impl<'a> Menu<'a> {
     pub fn new(id: usize) -> Self {
         Self {
             id,
             menu_items: Vec::new(),
-        }
-    }
-
-    pub fn prompt(&self) {
-        for menu_item in self.menu_items.iter() {
-            println!("{}) {}", menu_item.key, menu_item.prompt);
         }
     }
 
@@ -125,17 +191,9 @@ impl Menu {
             .find(|&menu_item| menu_item.key == key)
     }
 
-    pub fn insert_menu_item(&mut self, menu_item: MenuItem) -> Result<(), MgError> {
-        match self
-            .menu_items
-            .iter()
-            .find(|&item| item.key == menu_item.key)
-        {
-            Some(_) => Err(MgError {}),
-            None => {
-                self.menu_items.push(menu_item);
-                Ok(())
-            }
+    pub fn prompt(&self) {
+        for item in self.menu_items.iter() {
+            println!("{item}")
         }
     }
 }
@@ -146,84 +204,69 @@ pub struct MgError {}
 #[derive(Debug)]
 pub enum MenuAction {
     Back,
+    BackToStart,
     Quit,
     Navigate(usize),
     Nothing,
 }
 
-pub struct MenuItem {
-    prompt: String,
+pub struct MenuItem<'a> {
+    prompt: &'a str,
+    action: MenuAction,
     key: usize,
-    pub cb: Box<dyn Fn() -> MenuAction>,
+    // pub cb: Box<dyn Fn() -> ()>,
 }
 
-impl Display for MenuItem {
+impl<'a> Display for MenuItem<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}) {}", self.key, self.prompt)
     }
 }
 
 #[cfg(test)]
-mod basic_tests {
-    use crate::{Menu, MenuAction, MenuGenie, MenuItem};
+mod tests {
+    use crate::{MenuAction, MenuBuilder};
 
     #[test]
-    fn basic() {
-        let mut menu = Menu::new(1);
-        let mi1 = MenuItem {
-            key: 1,
-            prompt: "Manage Nodes".into(),
-            cb: Box::new(|| MenuAction::Navigate(2)),
-        };
-        let mi2 = MenuItem {
-            key: 2,
-            prompt: "Manage Network".into(),
-            cb: Box::new(|| MenuAction::Nothing),
-        };
-        let mi3 = MenuItem {
-            key: 3,
-            prompt: "Manage Edges".into(),
-            cb: Box::new(|| MenuAction::Nothing),
-        };
+    fn t1() {
+        let mut menu = MenuBuilder::new()
+            .with_menu(1)
+            .with_menu_item("Manage Nodes", MenuAction::Navigate(2))
+            .with_menu_item("Manage Edges", MenuAction::Navigate(3))
+            .with_back_button()
+            .with_menu(2)
+            .with_menu_item("Add Node", MenuAction::Nothing)
+            .with_menu_item("Delete Node", MenuAction::Nothing)
+            .with_menu_item("Edit Node", MenuAction::Nothing)
+            .with_back_button()
+            .with_menu(3)
+            .with_menu_item("Add Edge", MenuAction::Nothing)
+            .with_menu_item("Delete Edge", MenuAction::Nothing)
+            .with_menu_item("Edit Edge", MenuAction::Navigate(4))
+            .with_back_button()
+            .with_menu(4)
+            .with_menu_item("Change Items", MenuAction::Nothing)
+            .with_menu_item("Change Name", MenuAction::Nothing)
+            .with_menu_item("Change Start Node", MenuAction::Nothing)
+            .with_menu_item("Change End Node", MenuAction::Nothing)
+            .with_menu_item("Back to starting menu", MenuAction::BackToStart)
+            .with_back_button()
+            .build();
 
-        let mi4 = MenuItem {
-            key: 0,
-            prompt: "Quit".into(),
-            cb: Box::new(|| MenuAction::Back),
-        };
-
-        let mut menu2 = Menu::new(2);
-        let mi21 = MenuItem {
-            key: 1,
-            prompt: "Add Node".into(),
-            cb: Box::new(|| MenuAction::Nothing),
-        };
-        let mi22 = MenuItem {
-            key: 2,
-            prompt: "Delete Node".into(),
-            cb: Box::new(|| MenuAction::Nothing),
-        };
-        let mi23 = MenuItem {
-            key: 3,
-            prompt: "Edit Node".into(),
-            cb: Box::new(|| MenuAction::Nothing),
-        };
-
-        let mi24 = MenuItem {
-            key: 0,
-            prompt: "Back".into(),
-            cb: Box::new(|| MenuAction::Back),
-        };
-
-        menu.insert_menu_item(mi1).unwrap();
-        menu.insert_menu_item(mi2).unwrap();
-        menu.insert_menu_item(mi3).unwrap();
-        menu.insert_menu_item(mi4).unwrap();
-        menu2.insert_menu_item(mi21).unwrap();
-        menu2.insert_menu_item(mi22).unwrap();
-        menu2.insert_menu_item(mi23).unwrap();
-        menu2.insert_menu_item(mi24).unwrap();
-        let mut menu_genie = MenuGenie::new(vec![menu, menu2], 1).unwrap();
-        menu_genie.prompt()
+        while let Some(tuple) = menu.prompt() {
+            match tuple {
+                (2, 1) => println!("Adding node"),
+                (2, 2) => println!("Deleting node"),
+                (2, 3) => println!("Editing node"),
+                (3, 1) => println!("Adding edge"),
+                (3, 2) => println!("Deleting edge"),
+                (3, 3) => println!("Editing edge"),
+                (4, 1) => println!("Changing edge items"),
+                (4, 2) => println!("Changing edge name"),
+                (4, 3) => println!("Changing edge start node"),
+                (4, 4) => println!("Changing edge end node"),
+                _ => (),
+            }
+        }
     }
 }
