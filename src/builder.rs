@@ -3,6 +3,7 @@ use crate::menu_item::MenuItem;
 use crate::MenuAction;
 use crate::MenuGenie;
 
+#[derive(Default)]
 pub struct MenuBuilder<'a> {
     menus: Vec<Menu<'a>>,
     start_menu_id: Option<usize>,
@@ -15,14 +16,16 @@ impl<'a> MenuBuilder<'a> {
 
     pub fn with_menu(mut self, id: usize) -> Self {
         assert!(
-            self.menus.iter().find(|menu| menu.id == id).is_none(),
+            self.menus.iter().any(|menu| menu.id == id),
             "Menu with id {id} already added"
         );
 
         self.menus.push(Menu::new(id));
-        if let None = self.start_menu_id {
+
+        if self.start_menu_id.is_none() {
             self.start_menu_id = Some(self.menus.len())
         }
+
         self
     }
 
@@ -78,15 +81,6 @@ impl<'a> MenuBuilder<'a> {
             // and if there are menus added starting_menu_id will be Some
             start_menu_id: self.start_menu_id.unwrap(),
             callstack: vec![self.start_menu_id.unwrap()],
-        }
-    }
-}
-
-impl<'a> Default for MenuBuilder<'a> {
-    fn default() -> Self {
-        MenuBuilder {
-            menus: Vec::new(),
-            start_menu_id: None,
         }
     }
 }

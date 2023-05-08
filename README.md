@@ -24,7 +24,7 @@ Builder starts of with empty vector of menus.
 
 When we call `with_menu(id)` we insert another menu with the provided id. 
 
-`with_menu_item(prompt, action)` adds a generic menu item with the provided message and action. Each menu item has an id that is auto-generated when menu item is added to the menu. That menu item id is used when user makes a selection. *Menu items are added to the last added menu so menu must exist before we add any menu items.* 
+`with_menu_item(prompt, action)` adds a generic menu item with the provided message and action. Each menu item has an id that is auto-generated when menu item is added to the menu. That menu item id is used when user makes a selection. **Menu items are added to the last added menu so menu must exist before we add any menu items.**
 
 `with_back_button()` adds a menu item with text "Back", action Back and id 0.
 
@@ -42,15 +42,15 @@ MenuGenie struct holds the menus and the starting menu id. It works by saving a 
 
 It has two functions for running the menu:
 
-- `run` Function reads the last menu id from the callstack and prompts the user. Maybe we started a menu and an error happend, we can continue from the last menu that was displayed by just calling `run` again.
+- `prompt` Function reads the last menu id from the callstack and prompts the user. Maybe we started a menu and an error happend, we can continue from the last menu that was displayed just by calling `prompt` again.
 
-- `restart` Function first clears the callstack and puts starting menu id back on it, then calls `run`. It's useful if we want to start the menu from the beggining again.
+- `restart` Function first clears the callstack and puts starting menu id back on it, then calls `prompt`. It's useful if we want to start the menu from the beginning again.
 
 > **_Note_** when we call `build` on `MenuBuilder` it places starting menu id onto the callstack so we can just call run.
 
 ## Future
 
-It the future a plan on adding more features and customizations to the library. If you have some ideas fell free to let me know.
+It the future I plan on adding more features and customizations to the library. If you have some ideas fell free to let me know.
 These are some ideas that came to my mind: 
 
 - [ ] Configuration for setting the default quit and back button texts, Callbacks for automatically handling input and parsing errors, etc.

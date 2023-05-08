@@ -69,8 +69,6 @@ impl Display for MgError {
 
 impl Error for MgError {
     fn description(&self) -> &str {
-        match self {
-            _ => &self.description,
-        }
+        &self.description
     }
 }

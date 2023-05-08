@@ -11,7 +11,7 @@ fn main() {
         .with_menu_item("Change todo's name", MenuAction::Nothing)
         .with_menu_item("Change todo's description", MenuAction::Nothing)
         .with_menu_item("Change todo's priority", MenuAction::Navigate(3))
-        .with_menu_item("Invalid navigate", MenuAction::Navigate(5))
+        .with_menu_item("Invalid option", MenuAction::Navigate(5))
         .with_back_button()
         .with_menu(3)
         .with_menu_item("Set priority to Low", MenuAction::Nothing)
@@ -34,6 +34,7 @@ fn main() {
                     (3, 3) => println!("ACTION: Set priority to High"),
                     _ => (),
                 },
+                // Callstack is empty => Quit
                 None => break,
             },
 
