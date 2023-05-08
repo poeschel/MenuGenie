@@ -23,19 +23,16 @@ fn main() {
 
     loop {
         match menu.prompt() {
-            Ok(valid_value) => match valid_value {
-                Some(tuple) => match tuple {
-                    (1, 1) => println!("ACTION: Add Todo"),
-                    (1, 2) => println!("ACTION: Delete Todo"),
-                    (2, 1) => println!("ACTION: Change todo's name"),
-                    (2, 2) => println!("ACTION: Change todo's description"),
-                    (3, 1) => println!("ACTION: Set priority to Low"),
-                    (3, 2) => println!("ACTION: Set priority to Medium"),
-                    (3, 3) => println!("ACTION: Set priority to High"),
-                    _ => (),
-                },
-                // Callstack is empty => Quit
-                None => break,
+            Ok(tuple) => match tuple {
+                (0, 0) => break,
+                (1, 1) => println!("ACTION: Add Todo"),
+                (1, 2) => println!("ACTION: Delete Todo"),
+                (2, 1) => println!("ACTION: Change todo's name"),
+                (2, 2) => println!("ACTION: Change todo's description"),
+                (3, 1) => println!("ACTION: Set priority to Low"),
+                (3, 2) => println!("ACTION: Set priority to Medium"),
+                (3, 3) => println!("ACTION: Set priority to High"),
+                _ => (),
             },
 
             Err(e) => {

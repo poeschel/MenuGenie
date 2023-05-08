@@ -2,15 +2,13 @@
 name = "menu_genie"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Dusan Djordjic"]
+repository = "https://github.com/DusanDjordjic/MenuGenie"
+description = "Multi-level terminal menu library."
+keywords = ["terminal", "menu"]
 
 [lib]
 name = "menu_genie"
 path = "src/lib.rs"
-
-[[bin]]
-name = "simple_example"
-path = "examples/simple.rs"
 
 [dependencies]

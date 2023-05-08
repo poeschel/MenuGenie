@@ -1,6 +1,7 @@
 use std::error::Error;
 use std::fmt::Display;
 
+/// Custom Error type
 #[derive(Debug)]
 pub struct MgError {
     kind: MgErrorKind,
@@ -12,6 +13,7 @@ impl MgError {
         self.kind
     }
 
+    /// Creates an EmptyCallStack error
     pub fn empty_call_stack() -> Self {
         Self {
             kind: MgErrorKind::EmptyCallStack,
@@ -19,6 +21,7 @@ impl MgError {
         }
     }
 
+    /// Creates a MissingMenu error
     pub fn missing_menu(id: usize) -> Self {
         Self {
             kind: MgErrorKind::MissingMenu(id),
@@ -26,6 +29,7 @@ impl MgError {
         }
     }
 
+    /// Creates a MissingMenuItem error
     pub fn missing_menu_item(menu_id: usize, item_id: usize) -> Self {
         Self {
             kind: MgErrorKind::MissingMenuItem(menu_id, item_id),
@@ -34,6 +38,7 @@ impl MgError {
     }
 }
 
+/// Error kinds for MgError
 #[derive(Debug, Clone, Copy)]
 pub enum MgErrorKind {
     EmptyCallStack,
