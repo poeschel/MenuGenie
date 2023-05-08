@@ -16,7 +16,7 @@ impl<'a> MenuBuilder<'a> {
 
     pub fn with_menu(mut self, id: usize) -> Self {
         assert!(
-            self.menus.iter().any(|menu| menu.id == id),
+            !self.menus.iter().any(|menu| menu.id == id),
             "Menu with id {id} already added"
         );
 
