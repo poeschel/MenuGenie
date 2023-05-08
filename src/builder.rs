@@ -65,7 +65,7 @@ impl<'a> MenuBuilder<'a> {
         self
     }
 
-    pub fn starting_menu(mut self, starting_menu_id: usize) -> Self {
+    pub fn with_starting_menu(mut self, starting_menu_id: usize) -> Self {
         self.start_menu_id = Some(starting_menu_id);
         self
     }
