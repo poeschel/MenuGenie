@@ -15,12 +15,12 @@ use crate::MenuGenie;
 /// If you need both Back and Quit button add one with "shortcut" method and other with `with_menu_item` method
 
 #[derive(Default)]
-pub struct MenuBuilder<'a> {
-    menus: Vec<Menu<'a>>,
+pub struct MenuBuilder {
+    menus: Vec<Menu>,
     start_menu_id: Option<usize>,
 }
 
-impl<'a> MenuBuilder<'a> {
+impl MenuBuilder {
     /// Creates a new MenuBuilder
     pub fn new() -> Self {
         Self::default()
@@ -44,7 +44,7 @@ impl<'a> MenuBuilder<'a> {
     }
 
     /// Adds a generic menu item with the provided message and action.
-    pub fn with_menu_item(mut self, prompt: &'a str, action: MenuAction) -> Self {
+    pub fn with_menu_item(mut self, prompt: String, action: MenuAction) -> Self {
         let last_added_menu = self
             .menus
             .last_mut()
@@ -64,7 +64,7 @@ impl<'a> MenuBuilder<'a> {
             .last_mut()
             .expect("Menu must be added first before adding menu items");
         last_added_menu.menu_items.push(MenuItem {
-            prompt: "Back",
+            prompt: "Back".to_string(),
             action: MenuAction::Back,
             key: 0,
         });
@@ -78,7 +78,7 @@ impl<'a> MenuBuilder<'a> {
             .last_mut()
             .expect("Menu must be added first before adding menu items");
         last_added_menu.menu_items.push(MenuItem {
-            prompt: "Quit",
+            prompt: "Quit".to_string(),
             action: MenuAction::Quit,
             key: 0,
         });
@@ -93,7 +93,7 @@ impl<'a> MenuBuilder<'a> {
 
     /// Consumes the MenuBulider and creates MenuGenie setting its starting menu to be starting
     /// menu provided in the builder.
-    pub fn build(self) -> MenuGenie<'a> {
+    pub fn build(self) -> MenuGenie {
         assert_ne!(self.menus.len(), 0, "No menus added");
         MenuGenie {
             menus: self.menus,

@@ -68,13 +68,13 @@ use menu::Menu;
 /// It keeps track of called menus by using callstack and modifies it according to the actions
 /// provided. See the MenuAction for details.
 
-pub struct MenuGenie<'a> {
-    menus: Vec<Menu<'a>>,
+pub struct MenuGenie {
+    menus: Vec<Menu>,
     callstack: Vec<usize>,
     start_menu_id: usize,
 }
 
-impl<'a> MenuGenie<'a> {
+impl MenuGenie {
     fn get_menu(&self, menu_id: usize) -> Result<&Menu, MgError> {
         self.menus
             .iter()

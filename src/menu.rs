@@ -1,11 +1,11 @@
 use crate::menu_item::MenuItem;
 
-pub struct Menu<'a> {
+pub struct Menu {
     pub id: usize,
-    pub menu_items: Vec<MenuItem<'a>>,
+    pub menu_items: Vec<MenuItem>,
 }
 
-impl<'a> Menu<'a> {
+impl Menu {
     pub fn new(id: usize) -> Self {
         Self {
             id,
