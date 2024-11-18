@@ -75,14 +75,14 @@ pub struct MenuGenie {
 }
 
 impl MenuGenie {
-    fn get_menu(&self, menu_id: usize) -> Result<&Menu, MgError> {
+    pub fn get_menu(&self, menu_id: usize) -> Result<&Menu, MgError> {
         self.menus
             .iter()
             .find(|&menu| menu.id == menu_id)
             .ok_or(MgError::missing_menu(menu_id))
     }
 
-    fn get_current_menu(&self) -> Result<&Menu, MgError> {
+    pub fn get_current_menu(&self) -> Result<&Menu, MgError> {
         match self.callstack.last() {
             Some(&menu_id) => self.get_menu(menu_id),
             None => Err(MgError::empty_call_stack()),
@@ -142,7 +142,7 @@ impl MenuGenie {
         self.prompt()
     }
 
-    fn check_menu_action(&mut self, choosen_key: usize) -> Result<Option<(usize, usize)>, MgError> {
+    pub fn check_menu_action(&mut self, choosen_key: usize) -> Result<Option<(usize, usize)>, MgError> {
         let current_menu = self.get_current_menu_unchecked();
         match current_menu.get_menu_item(choosen_key) {
             Some(menu_item) => match menu_item.action {
@@ -176,7 +176,7 @@ impl MenuGenie {
         self.callstack.pop().unwrap();
     }
 
-    fn back_to_start(&mut self) {
+    pub fn back_to_start(&mut self) {
         // UNWRAP Same as in fn back
         let first = *self.callstack.first().unwrap();
         self.callstack.retain(|ele| *ele == first)
